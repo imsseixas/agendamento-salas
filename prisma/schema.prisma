@@ -1,0 +1,104 @@
+// Schema Prisma — Agendamento de Salas (Santa Izabel)
+// Em dev usamos SQLite. SQLite não suporta enums nativos do Prisma,
+// então papéis e status são armazenados como String com valores controlados
+// na aplicação (ver lib/constants.js).
+// Para produção (PostgreSQL), basta trocar o provider para "postgresql"
+// e a DATABASE_URL no .env. Os enums podem então ser promovidos a `enum`.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  name      String
+  // Role: USER | COORDENADOR | ADMIN
+  role      String    @default("USER")
+  password  String
+  active    Boolean   @default(true)
+  bookings  Booking[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Room {
+  id              String         @id @default(cuid())
+  name            String         @unique
+  capacity        Int            @default(0)
+  description     String?
+  // Sala exige aprovação de ADMIN/COORDENADOR para confirmar agendamento
+  requiresApproval Boolean       @default(false)
+  active          Boolean        @default(true)
+  resources       RoomResource[]
+  bookings        Booking[]
+  screens         PublicScreenRoom[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+// Tela pública configurável: um conjunto de salas exibido em um link próprio.
+model PublicScreen {
+  id        String             @id @default(cuid())
+  name      String
+  slug      String             @unique
+  active    Boolean            @default(true)
+  rooms     PublicScreenRoom[]
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+}
+
+// Salas de uma tela pública, com ordem das colunas.
+model PublicScreenRoom {
+  screenId String
+  roomId   String
+  position Int          @default(0)
+  screen   PublicScreen @relation(fields: [screenId], references: [id], onDelete: Cascade)
+  room     Room         @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@id([screenId, roomId])
+}
+
+model Resource {
+  id    String         @id @default(cuid())
+  name  String         @unique
+  rooms RoomResource[]
+}
+
+// Tabela de junção N:N entre Room e Resource
+model RoomResource {
+  roomId     String
+  resourceId String
+  room       Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@id([roomId, resourceId])
+}
+
+model Booking {
+  id           String   @id @default(cuid())
+  title        String
+  description  String?
+  startAt      DateTime
+  endAt        DateTime
+  attendees    Int      @default(1)
+  recurring    Boolean  @default(false)
+  // Agrupa instâncias de uma mesma série recorrente
+  recurrenceId String?
+  // Status: CONFIRMED | PENDING | CANCELLED
+  status       String   @default("CONFIRMED")
+  userId       String
+  roomId       String
+  user         User     @relation(fields: [userId], references: [id])
+  room         Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([roomId, startAt, endAt])
+  @@index([recurrenceId])
+}
