@@ -1,17 +1,20 @@
 // Schema Prisma — Agendamento de Salas (Santa Izabel)
-// Em dev usamos SQLite. SQLite não suporta enums nativos do Prisma,
-// então papéis e status são armazenados como String com valores controlados
-// na aplicação (ver lib/constants.js).
-// Para produção (PostgreSQL), basta trocar o provider para "postgresql"
-// e a DATABASE_URL no .env. Os enums podem então ser promovidos a `enum`.
+// Banco: PostgreSQL (dev e produção). Recomendado Neon (free tier).
+// Papéis e status são armazenados como String com valores controlados na
+// aplicação (ver lib/constants.js) — podem ser promovidos a `enum` no futuro.
+//
+// Variáveis de ambiente:
+//   DATABASE_URL -> conexão "pooled" (usada pela aplicação em runtime)
+//   DIRECT_URL   -> conexão direta (usada por prisma migrate)
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {

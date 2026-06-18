@@ -6,7 +6,7 @@ Sistema web para reserva de salas da instituição. Esta versão entrega a **fun
 
 - **Next.js 15** (App Router, React 19)
 - **TailwindCSS 4**
-- **Prisma ORM** com **SQLite** (dev) — pronto para migrar a PostgreSQL
+- **Prisma ORM** com **PostgreSQL** (dev e produção — recomendado [Neon](https://neon.tech))
 - Auth com **JWT** em cookie httpOnly + **bcrypt**
 
 ## Estrutura
@@ -52,9 +52,12 @@ são criadas pelo **ADMIN** em `/admin`:
 
 ## Como rodar (dev)
 
+Precisa de um PostgreSQL. Crie um grátis no [Neon](https://neon.tech) e
+preencha o `.env` com base no `.env.example` (`DATABASE_URL` + `DIRECT_URL`).
+
 ```bash
 npm install
-npm run db:push      # cria o schema no SQLite (prisma/dev.db)
+npm run db:deploy    # aplica as migrações no Postgres
 npm run db:seed      # popula admin, salas e recursos
 npm run dev          # http://localhost:3000
 ```
@@ -77,11 +80,11 @@ npm run dev          # http://localhost:3000
 - **Aprovação**: salas com `requiresApproval` criam bookings em `PENDING` (confirmação por ADMIN/COORDENADOR).
 - **Papéis**: USER, COORDENADOR, ADMIN.
 
-## Migrar para PostgreSQL (produção)
+## Deploy (Vercel + Neon)
 
-1. No `prisma/schema.prisma`, troque `provider = "sqlite"` por `"postgresql"`.
-2. Ajuste `DATABASE_URL` no `.env` para a string do Postgres.
-3. `npm run db:push` (ou `prisma migrate dev`) e `npm run db:seed`.
+Passo a passo completo em [DEPLOY.md](DEPLOY.md). Resumo: banco no **Neon**
+(grátis), app na **Vercel** (grátis), variáveis `DATABASE_URL` / `DIRECT_URL` /
+`JWT_SECRET`. O build aplica as migrações automaticamente (`prisma migrate deploy`).
 
 ## Próximos passos (fora do escopo desta entrega)
 
